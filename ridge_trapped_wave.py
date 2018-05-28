@@ -2,7 +2,7 @@ import sys
 from warnings import filterwarnings, catch_warnings, warn
 import numpy as np
 import numpy.ma as ma
-from scipy.linalg import eig
+from scipy.linalg import eig, eigvals
 import matplotlib.pyplot as plt
 
 
@@ -149,12 +149,16 @@ class RidgeTrappedWave(object):
                                'method to determine')
 
     def __repr__(self):
+        x_str = '[' + ', '.join(str(np.round(
+            xi, decimals=1)) for xi in self.x) + ']'
+        depth_str = '[' + ', '.join(str(np.round(
+            zi, decimals=1)) for zi in self.depth) + ']'
         fmt_str = ('{}(omega={!s}, N0={!s}, lat={!s}, lambda_guess={!s}, '
-                   'nmodes={!s}, mode={!s}, x={!s}, depth={!s})')
+                   'nmodes={!s}, mode={!s},\nx={},\ndepth={!r})')
         return fmt_str.format(
             self.__class__.__name__,
             self.omega, self.N0, self.lat, self.lambda_guess, self.nmodes,
-            self.mode, self.x, self.depth)
+            self.mode, x_str, depth_str)
 
     def __str__(self):
         return 'Ridge Trapped Wave with wavelength of ' + self.wavelength_str
@@ -329,13 +333,19 @@ class RidgeTrappedWave(object):
         """
         if print_iterations:
             print('λ (km)      ω')
-            print('{0:2.1f}'.format(2*np.pi/self.l/1e3))
+            print('{0:2.1f}'.format(2*np.pi/self.l/1e3), flush=True)
         self.l = 2*pi/self.lambda_guess
         omega_out = 10  # Need really 'incorrect' value to start with
         niter = 0
         # Record all (omega, l) estimates made during iteration
         self.omega_ests = []
         self.l_ests = []
+
+        # Warnings that arise when finding eigenvalue don't affect the
+        # low modes, and are consequently unimportant
+        filterwarnings('ignore', '.*divide by zero*.')
+        filterwarnings(
+            'ignore', '.*invalid value encountered in true_divide*.')
         while (abs((self.omega - omega_out)/self.omega) > tol and
                niter < niter_max):
             niter += 1
@@ -344,20 +354,12 @@ class RidgeTrappedWave(object):
             self.update_epsilon_zeta()
             self.update_block_matrices()
 
-            with catch_warnings():
-                # Warnings that arise when finding eigenvalue don't affect the
-                # low modes, and are consequently unimportant
-                filterwarnings('ignore', '.*divide by zero*.')
-                filterwarnings(
-                    'ignore', '.*invalid value encountered in true_divide*.')
-
-                omegas, coeffs = eig(self.LHS, self.RHS)
-
-                # Occasionally, the first omega is unphysical
-                # either inf, really large, or negative
-                # Why? unknown.
-                good_eig_solns = np.logical_and(omegas > 0, omegas < 1)
-                omegas = omegas[good_eig_solns]
+            omegas = eigvals(self.LHS, self.RHS)
+            # Occasionally, the first omega is unphysical
+            # either inf, really large, or negative
+            # Why? unknown.
+            good_eig_solns = np.logical_and(omegas > 0, omegas < 1)
+            omegas = omegas[good_eig_solns]
 
             omega_out = np.real(omegas[self.mode])
 
@@ -373,14 +375,20 @@ class RidgeTrappedWave(object):
                     np.abs(self.omega - omega_out)/self.omega)).astype(int)
                 sf = min(sf_tol, sf_curr)
                 fmt = '{0:<12.' + str(sf) + 'f}'
-                print(fmt.format(2*np.pi/self.l/1e3), end='')
-                print(fmt.format(omega_out))
+                print(fmt.format(2*np.pi/self.l/1e3), end='', flush=True)
+                print(fmt.format(omega_out), flush=True)
 
         if print_iterations:
             if niter < niter_max:
-                print('Converged to specified accuracy')
+                print('Converged to specified accuracy', flush=True)
             elif niter == niter_max:
-                print('Stopping. Number of iterations reached niter_max')
+                print('Stopping. Number of iterations reached niter_max',
+                      flush=True)
+            print('Now calculating eigenvectors', flush=True)
+
+        omegas, coeffs = eig(self.LHS, self.RHS)
+        good_eig_solns = np.logical_and(omegas > 0, omegas < 1)
+        omegas = omegas[good_eig_solns]
 
         coeffs = coeffs[:, good_eig_solns]
         coeffs = np.real(coeffs[:, self.mode]).reshape(2*self.J, self.nmodes)
