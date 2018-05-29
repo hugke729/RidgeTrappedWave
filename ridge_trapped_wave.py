@@ -128,6 +128,7 @@ class RidgeTrappedWave(object):
         self.x = x
         self.depth = depth
         self.omega = omega
+        self.omega_in = 1.0*omega
         self.N0 = N0
         self.lat = lat
         self.h = depth/depth.max()
@@ -153,11 +154,11 @@ class RidgeTrappedWave(object):
             xi, decimals=1)) for xi in self.x) + ']'
         depth_str = '[' + ', '.join(str(np.round(
             zi, decimals=1)) for zi in self.depth) + ']'
-        fmt_str = ('{}(omega={!s}, N0={!s}, lat={!s}, lambda_guess={!s}, '
-                   'nmodes={!s}, mode={!s},\nx={},\ndepth={!r})')
+        fmt_str = ('{}(\n    omega={!s}, N0={!s}, lat={!s}, lambda_guess={!s}, '
+                   'nmodes={!s}, mode={!s},\n    x={},\n    depth={})')
         return fmt_str.format(
             self.__class__.__name__,
-            self.omega, self.N0, self.lat, self.lambda_guess, self.nmodes,
+            self.omega_in, self.N0, self.lat, self.lambda_guess, self.nmodes,
             self.mode, x_str, depth_str)
 
     def __str__(self):
