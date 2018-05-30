@@ -30,12 +30,12 @@ def Q_mn(h1, h2, nmodes=20):
         filterwarnings('ignore', '.*divide by zero*.')
         filterwarnings('ignore', '.*invalid value encountered in true_divide*.')
         numerator = h1**2*h2*m*np.sin(m*np.pi*(h1-h2)/h2)
-        denominator = h1**2*m**2*np.pi-h2**2*n**2*pi
+        denominator = h1**2*m**2*np.pi-h2**2*n**2*np.pi
         Q_mn = np.matrix(numerator/denominator)
 
         # Deal with singularity
         sing = np.isclose(m*h1, n*h2)
-        Q_mn[sing] = ((-1)**n/2*(h1*np.cos(h2*n*pi/h1)))[sing]
+        Q_mn[sing] = ((-1)**n/2*(h1*np.cos(h2*n*np.pi/h1)))[sing]
 
         Q_mn[0, 0] = h1
     return Q_mn
@@ -335,7 +335,7 @@ class RidgeTrappedWave(object):
         if print_iterations:
             print('λ (km)      ω')
             print('{0:2.1f}'.format(2*np.pi/self.l/1e3), flush=True)
-        self.l = 2*pi/self.lambda_guess
+        self.l = 2*np.pi/self.lambda_guess
         omega_out = 10  # Need really 'incorrect' value to start with
         niter = 0
         # Record all (omega, l) estimates made during iteration
