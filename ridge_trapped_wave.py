@@ -515,11 +515,11 @@ class RidgeTrappedWave(object):
             if pcolor:
                 caxs += [axi.pcolormesh(
                     X_km, Z_m, ma.masked_where(self.mask, Quantity),
-                    cmap=rygcb(), vmin=-vmax, vmax=vmax)]
+                    cmap='RdBu', vmin=-vmax, vmax=vmax)]
             else:
                 caxs += [axi.contourf(
                     X_km, Z_m, ma.masked_where(self.mask, Quantity),
-                    cmap=rygcb(), levels=np.r_[-vmax:vmax:12j], extend='both')]
+                    cmap='RdBu', levels=np.r_[-vmax:vmax:12j], extend='both')]
 
             axi.text(0, -self.depth.max()*0.95, labels[i], zorder=3)
 
