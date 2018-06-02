@@ -28,3 +28,7 @@ As described in the docstring, ridge-trapped wave properties are calculated foll
     Ridge Trapped Wave with wavelength of 46.1 km
 ```
 
+To add to Readme
+- Warn about using ω very close to 1
+- Add variable N example
+- Add schematic
