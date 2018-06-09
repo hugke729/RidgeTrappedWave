@@ -1,5 +1,7 @@
 # RidgeTrappedWave
-Python code to calculate properties of an internal Kelvin wave propagating alongside a ridge. 
+Python code to calculate properties of an internal Kelvin wave propagating alongside a ridge, step, or coast.
+
+The code was originally designed solely for ridge, but was later adapted to the coastal case as well.
 
 <img src="ridge_trapped_wave_schematic.png" height="264" width="370" >
 
@@ -66,8 +68,10 @@ As described in the docstring, ridge-trapped wave properties are calculated foll
 ```
 ## Usage Notes
 
-- For omega very close to 1 (i.e, greater than 0.95), plots of U and V will be noisy.
+- For omega very close to 1 (i.e., greater than 0.95), plots of U and V will be noisy.
 - The internal Rossby radius for the problem is calculated from the leftmost depth. Therefore, the left side of the ridge should be equal to or deeper than the seafloor on the right side of the ridge.
 - Code may or may not work when negative latitudes are used. Just use positive ones.
 - The main eigenvalue problem involves M × M matrices, where M is 2 × number of modes × number of steps. Hence, when the number of steps gets large (> 50), calculating the solution may take several minutes.
+- The coastal problem (i.e., where depth goes to zero) has undergone only limited testing.
+- If the solution doesn't clearly converge, try a different value for `lambda_guess`
 
