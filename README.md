@@ -1,7 +1,7 @@
 # RidgeTrappedWave
 Python code to calculate properties of an internal Kelvin wave propagating alongside a ridge, step, or coast.
 
-The code was originally designed solely for ridge, but was later adapted to the coastal case as well.
+The code was originally designed solely for a ridge, hence the name, but was later adapted to the coastal case as well.
 
 <img src="ridge_trapped_wave_schematic.png" height="264" width="370" >
 
