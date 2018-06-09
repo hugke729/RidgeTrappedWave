@@ -215,7 +215,11 @@ def Q_mn_variable_N(h1, h2, vecs1, vecs2):
 
 
 class RidgeTrappedWave(object):
-    """Calculate properties of an subinertial wave trapped along a ridge
+    """Derive properties of an subinertial wave beside a ridge, step, or coast
+
+    This class is called RidgeTrappedWave because that's what it was
+    originally designed for. However, the same core code also works for steps
+    and ridges.
 
     See Hughes et al. (2018) Tidal conversion and dissipation at steep
     topography in a channel poleward of the critical latitude. In prep for
@@ -235,8 +239,10 @@ class RidgeTrappedWave(object):
     x: 1D array
         Array defining the locations of the discontinuites (metres)
     depths: 1D array
-        Array defining the depths (metres). This must be one element larger
-        than ``x``
+        | Array defining the depths (metres). This must be one element larger
+        | than ``x``
+        | For a coastal trapped wave (ie not a step or ridge) the last depth
+        | should be identically zero
     omega: float
         | Non-dimensionalised tidal forcing frequency between 0 and 1
         | omega is dimensional frequency divided by coriolis frequency
@@ -276,12 +282,14 @@ class RidgeTrappedWave(object):
     >>> r.calc_wavelength_and_coefficients(niter_max=8)
     >>> # r.contour_mode_shapes() # Plot solution
     >>> print(r)
+    Iterating
     λ (km)      ω
     40.0
     44.4        0.917
     46.12       0.9047
     46.13       0.9001
     Converged to specified accuracy
+    Now calculating eigenmode
     Ridge Trapped Wave with wavelength of 46.1 km
 
     Vertically variable stratification
@@ -295,15 +303,37 @@ class RidgeTrappedWave(object):
     >>> r.calc_wavelength_and_coefficients(niter_max=8)
     >>> # r.contour_mode_shapes() # Plot solution
     >>> print(r)
+    Calculating vertical modes and matching matrices
+    Iterating
     λ (km)      ω
     40.0
-    44.4        0.959
-    74.5        0.952
-    73.04       0.8974
-    73.02       0.9000
+    44.4        0.924
+    49.2        0.912
+    49.27       0.9002
     Converged to specified accuracy
     Now calculating eigenmode
     Ridge Trapped Wave with wavelength of 73.0 km
+
+    Coastal trapped wave - compare with analytical internal Kelvin wave
+
+    >>> x = 0, 10, 20  # Very closely spaced steps to approximate wall
+    >>> z = 250, 200, 100, 0  # This is minimum no. depths for costal problem
+    >>> omega = 0.9
+    >>> N = 6E-3
+    >>> lat = 80
+    >>> r = RidgeTrappedWave(x, z, omega, N, lat)
+    >>> r.calc_wavelength_and_coefficients()
+    Iterating
+    λ (km)      ω
+    38.7
+    43          0.63
+    17          0.58
+    20.9        0.963
+    23.4        0.925
+    22.8        0.889
+    22.75       0.8990
+    22.75       0.9000
+    Analytical solution is 2*N*max(z)/(omega*f) = 23.2 km
     """
 
     def __init__(
@@ -314,9 +344,11 @@ class RidgeTrappedWave(object):
         x = np.asanyarray(x)
         depth = np.asanyarray(depth)
         N = np.asanyarray(N)
-        assert x.size >= 2, ('This code does not work for a single step. '
-                             'Perhaps try faking it with two very closely '
-                             'spaced steps')
+        too_few_steps_msg = (
+            'This code does not work for a single step or less.\n'
+            'x and z vectors have minimum size of 2 and 3, respectively,\n'
+            'for ridge or step or 3 and 4, respectively, for coastal problem')
+        assert (x.size > 1 and depth[-1] != 0) or x.size > 2, too_few_steps_msg
         assert len(depth) == len(x) + 1, 'len(depths) must equal len(x) + 1'
         if all(depth < 0):
             warn('Depths should be positive. Changing sign', RuntimeWarning)
@@ -332,6 +364,15 @@ class RidgeTrappedWave(object):
             sys.stderr.flush()
 
         x, depth = remove_duplicate_depths(x, depth, print_progress)
+
+        if np.isclose(depth[-1], 0):
+            self.is_coastal_wave = True
+            # Remove last x, depth pair and keep track of that last dx
+            self.L_endx2 = np.diff(x[-2:])
+            x = x[:-1]
+            depth = depth[:-1]
+        else:
+            self.is_coastal_wave = False
 
         self.x = x
         self.depth = depth
@@ -351,6 +392,7 @@ class RidgeTrappedWave(object):
         self.lat = lat
         self.h = depth/depth.max()
         self.lat_to_f(lat)
+        self.Lr = self.N0*self.depth.max()/(self.f*np.pi)
         if lambda_guess is None:
             lambda_guess = (
                 2*self.N0*depth.max()/(omega*self.f))/(1-self.h.min())
@@ -534,6 +576,9 @@ class RidgeTrappedWave(object):
         alpha, beta = self.alpha, self.beta
         epsilon, zeta = self.epsilon, self.zeta
 
+        if self.is_coastal_wave:
+            L_hat_end = 0.5*self.L_endx2/(self.R*self.depth.max())
+
         LHS = np.matrix(np.zeros((2*J*nmodes, 2*J*nmodes)))
         RHS = np.matrix(np.zeros((2*J*nmodes, 2*J*nmodes)))
 
@@ -547,6 +592,31 @@ class RidgeTrappedWave(object):
                 H_epsilon = H[1]*np.matrix(np.diag(epsilon[1]))
                 H_zeta = H[1]*np.matrix(np.diag(zeta[1]))
                 RHS_bot = np.block([-G_alpha, -H_epsilon, H_zeta, R_fill])
+
+            elif j == J-1 and self.is_coastal_wave:
+                L_fill = np.zeros((nmodes, (2*J-3)*nmodes))
+                tmp_x = (
+                    np.exp(-2*beta*L_hat_end) +
+                    (self.omega*beta - self.lhat) /
+                    (self.omega*beta + self.lhat) *
+                    np.exp(2*beta*L_hat_end))
+                tmp_x = np.matrix(np.diag(tmp_x))
+
+                LHS_top = np.block([L_fill, E[J-1], E[J-1], -F[J]*tmp_x])
+                LHS_bot = np.block([L_fill, -G[J-1], -G[J-1], H[J]*tmp_x])
+
+                G_epsilon = G[J-1]*np.matrix(np.diag(epsilon[J-1]))
+                G_zeta = G[J-1]*np.matrix(np.diag(zeta[J-1]))
+
+                tmp_x = beta*(
+                    np.exp(-2*beta*L_hat_end) -
+                    (self.omega*beta - self.lhat) /
+                    (self.omega*beta + self.lhat) *
+                    np.exp(2*beta*L_hat_end))
+
+                RHS_bot = np.block([L_fill, -G_epsilon, -G_zeta,
+                                    H[J]*np.matrix(np.diag(tmp_x))])
+
             elif j == J-1:
                 L_fill = np.zeros((nmodes, (2*J-3)*nmodes))
                 LHS_top = np.block([L_fill, E[J-1], E[J-1], -F[J]])
@@ -697,8 +767,12 @@ class RidgeTrappedWave(object):
         C, D = [np.insert(X, 0, np.nan, axis=0) for X in [C, D]]
 
         if x is None:
-            xm = (self.N0/self.f)/self.R
-            x = np.r_[self.xhat[0]-xm:self.xhat[-1]+xm:120j]
+            xend = self.Lr/(self.R*self.depth.max())
+            if self.is_coastal_wave:
+                xend2 = self.L_endx2/(self.R*self.depth.max())
+                x = np.r_[self.xhat[0]-xend:self.xhat[-1]+xend2:120j]
+            else:
+                x = np.r_[self.xhat[0]-xend:self.xhat[-1]+xend:120j]
         else:
             x = np.asanyarray(x, dtype='float')
             x /= self.R*self.depth.max()
@@ -708,6 +782,8 @@ class RidgeTrappedWave(object):
 
         z = np.r_[-1:0:self.nmodes*2j]
         X, Z = np.meshgrid(x, z, indexing='ij')
+        if self.is_coastal_wave:
+            L_hat_end = 0.5*self.L_endx2/(self.R*self.depth.max())
 
         P, U, V = np.zeros_like(X), np.zeros_like(X), np.zeros_like(X)
         mask = np.zeros_like(X).astype(bool)
@@ -729,6 +805,26 @@ class RidgeTrappedWave(object):
                     P_n = A[ni]*np.exp(self.alpha[ni]*(X-self.xhat[0]))
                     P_n *= F_z(self, 0, ni)
                     dPdx_n = self.alpha[ni]*P_n
+                    P[ind] += P_n[ind]
+                    U[ind] += (self.omega*dPdx_n - self.lhat*P_n)[ind]
+                    V[ind] += (dPdx_n - self.omega*self.lhat*P_n)[ind]
+            elif j == self.J and self.is_coastal_wave:
+                for ni in nvec:
+                    ind = np.s_[x >= self.xhat[-1], :]
+                    P_n = B[ni]*np.exp(
+                        self.beta[ni]*(X-self.xhat[-1]-2*L_hat_end))
+                    P_n += B[ni]*(
+                        (self.omega*self.beta[ni] - self.lhat) /
+                        (self.omega*self.beta[ni] + self.lhat) *
+                        np.exp(-self.beta[ni]*(X-self.xhat[-1]-2*L_hat_end)))
+                    P_n *= F_z(self, -1, ni)
+                    dPdx_n = B[ni]*self.beta[ni]*np.exp(
+                        self.beta[ni]*(X-self.xhat[-1]-2*L_hat_end))
+                    dPdx_n -= B[ni]*self.beta[ni]*(
+                        (self.omega*self.beta[ni] - self.lhat) /
+                        (self.omega*self.beta[ni] + self.lhat) *
+                        np.exp(-self.beta[ni]*(X-self.xhat[-1]-2*L_hat_end)))
+                    dPdx_n *= F_z(self, -1, ni)
                     P[ind] += P_n[ind]
                     U[ind] += (self.omega*dPdx_n - self.lhat*P_n)[ind]
                     V[ind] += (dPdx_n - self.omega*self.lhat*P_n)[ind]
@@ -835,8 +931,14 @@ class RidgeTrappedWave(object):
             xin = self.xhat*self.R*self.depth.max()/1e3
             yin = -self.h*self.depth.max()
             xlim = axi.get_xlim()
-            xin = np.r_[xlim[0], xin, xlim[-1]]
-            yin = np.r_[yin, yin[-1]]
+            if self.is_coastal_wave:
+                xin = np.r_[xlim[0], xin,
+                            np.ones(2)*(xin[-1]) + self.L_endx2/1e3]
+                xin = np.r_[xin, xin[-1] + self.Lr/1e3]
+                yin = np.r_[yin, yin[-1], 0, 0]
+            else:
+                xin = np.r_[xlim[0], xin, xlim[-1]]
+                yin = np.r_[yin, yin[-1]]
             axi.fill_between(xin, yin, -self.depth.max(),
                              color='grey', step='post')
 
