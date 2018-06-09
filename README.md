@@ -37,6 +37,7 @@ As described in the docstring, ridge-trapped wave properties are calculated foll
     >>> r.calc_wavelength_and_coefficients(niter_max=8, print_iterations=True)
     >>> # r.contour_mode_shapes() # Plot solution
     >>> print(r)
+    Iterating
     λ (km)      ω
     40.0
     44.4        0.917
@@ -50,18 +51,19 @@ As described in the docstring, ridge-trapped wave properties are calculated foll
 ### Vertically variable stratification
 
 ```python
-    >>> N = [[8E-3, 0],
-             [6E-3, 125],
-             [2E-3, 250]]
+    >>> N = [[8E-3, 0], [6E-3, 125], [2E-3, 250]]
+    >>> lat = 80
     >>> r = RidgeTrappedWave(x, z, omega, N, lat, lambda_guess=40e3)
     >>> r.calc_wavelength_and_coefficients(niter_max=8)
+    >>> # r.contour_mode_shapes() # Plot solution
     >>> print(r)
+    Calculating vertical modes and matching matrices
+    Iterating
     λ (km)      ω
     40.0
-    44.4        0.959
-    74.5        0.952
-    73.04       0.8974
-    73.02       0.9000
+    44.4        0.924
+    49.2        0.912
+    49.27       0.9002
     Converged to specified accuracy
     Now calculating eigenmode
     Ridge Trapped Wave with wavelength of 73.0 km
