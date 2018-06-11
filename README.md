@@ -70,6 +70,7 @@ As described in the docstring, ridge-trapped wave properties are calculated foll
 ```
 ## Usage Notes
 
+- The distance between steps should ideally be a small fraction of the internal Rossby radius
 - For omega very close to 1 (i.e., greater than 0.95), plots of U and V will be noisy.
 - The internal Rossby radius for the problem is calculated from the leftmost depth. Therefore, the left side of the ridge should be equal to or deeper than the seafloor on the right side of the ridge.
 - Code may or may not work when negative latitudes are used. Just use positive ones.
