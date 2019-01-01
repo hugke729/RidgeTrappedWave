@@ -749,8 +749,12 @@ class RidgeTrappedWave(object):
                 sf = min(sf_tol, sf_curr)
                 fmt_l = '{0:<12.' + str(sf - 1) + 'f}'
                 fmt_omega = '{0:<12.' + str(sf + 1) + 'f}'
-                print(fmt_l.format(2*np.pi/self.l/1e3), end='', flush=True)
-                print(fmt_omega.format(omega_out), flush=True)
+                try:
+                    print(fmt_l.format(2*np.pi/self.l/1e3), end='', flush=True)
+                    print(fmt_omega.format(omega_out), flush=True)
+                except ValueError:
+                    # Initial estimate too far off, don't try printing this step
+                    pass
 
         if self.print_progress:
             if niter < niter_max:
