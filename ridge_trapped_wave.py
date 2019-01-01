@@ -376,13 +376,12 @@ class RidgeTrappedWave(object):
         assert np.all(np.diff(x) > 0), 'x must increase monotonically'
         assert np.array(N).size == 1 or np.array(N).shape[1] == 2, (
             'N must be either a single value or two-column array')
+        x, depth = remove_duplicate_depths(x, depth, print_progress)
         if len(x)*nmodes > 500:
             M = str(2*len(x)*nmodes)
             warn('Matrices are large (' + M + ' x ' + M + ')\n'
                  'Computing eigenmode may take several minutes', RuntimeWarning)
             sys.stderr.flush()
-
-        x, depth = remove_duplicate_depths(x, depth, print_progress)
 
         if np.isclose(depth[-1], 0):
             self.is_coastal_wave = True
