@@ -34,8 +34,8 @@ As described in the docstring, ridge-trapped wave properties are calculated foll
     >>> omega = 0.9
     >>> N0 = 6E-3
     >>> lat = 80
-    >>> r = RidgeTrappedWave(x, z, omega, N0, lat, lambda_guess=40e3)
-    >>> r.calc_wavelength_and_coefficients(niter_max=8, print_iterations=True)
+    >>> r = RidgeTrappedWave(x, z, omega, N0, lat, lambda_guess=40e3, print_progress=True)
+    >>> r.calc_wavelength_and_coefficients(niter_max=8)
     >>> # r.contour_mode_shapes() # Plot solution
     >>> print(r)
     Iterating
