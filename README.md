@@ -19,8 +19,8 @@ For example, mode shapes for a Gaussian ridge with ω = 0.8*f* look like
 
 This is a supplement to
 
-Hughes, K. G. and J. M. Klymak (2019) [Tidal conversion and dissipation at steep topography in a channel poleward of the critical latitude](http://dx.doi.org/doi:10.1175/JPO-D-18-0132.1)  
-*J. Phys. Oceanogr.* doi:10.1175/JPO-D-18-0132.1
+[Tidal conversion and dissipation at steep topography in a channel poleward of the critical latitude](http://dx.doi.org/doi:10.1175/JPO-D-18-0132.1)  
+Hughes, K. G. and J. M. Klymak (2019), *J. Phys. Oceanogr.* doi:10.1175/JPO-D-18-0132.1
 
 See in particular Section 4 and the appendix.
 
