@@ -791,7 +791,7 @@ class RidgeTrappedWave(object):
         if x is None:
             xend = self.Lr/(self.R*self.depth.max())
             if self.is_coastal_wave:
-                xend2 = self.L_endx2/(self.R*self.depth.max())
+                xend2 = self.L_endx2[0]/(self.R*self.depth.max())
                 x = np.r_[self.xhat[0]-xend:self.xhat[-1]+xend2:120j]
             else:
                 x = np.r_[self.xhat[0]-xend:self.xhat[-1]+xend:120j]
