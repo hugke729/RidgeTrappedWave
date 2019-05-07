@@ -463,7 +463,9 @@ class RidgeTrappedWave(object):
             self.lat, self.lambda_guess, self.nmodes, self.mode)
 
     def __str__(self):
-        return 'Ridge Trapped Wave with wavelength of ' + self.wavelength_str
+        return (wave_type + ' Trapped Wave with wavelength of ' +
+            self.wavelength_str)
+
 
     def lat_to_f(self, lat):
         self.f = 2*7.29211E-5*np.sin(np.deg2rad(lat))
