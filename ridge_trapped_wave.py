@@ -478,7 +478,7 @@ class RidgeTrappedWave(object):
     def set_R(self):
         """R is defined by Chapman (1982) doi:10.1016/0377-0265(82)90002-1"""
         # See equation 4 for unapproximated R (not value used in Appendix B)
-        self.R = ((self.N0/self.f) - self.omega**2)/np.sqrt(1-self.omega**2)
+        self.R = np.sqrt(((self.N0/self.f)**2 - self.omega**2)/(1-self.omega**2))
 
     def update_horizontal_scale(self):
         """Non-dimensionalise by H and further scale by R
